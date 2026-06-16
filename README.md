@@ -92,6 +92,8 @@ If you prefer not to use Git, download the project and upload files directly.
 
 ## Lab Steps
 
+> **Steps 2, 3, and 4 are run entirely in Cortex Code Desktop (CoCo).** Open the project folder in CoCo, then use the prompts below in the chat panel. Only Step 1 runs in a Snowflake Workspace.
+
 ### Step 1: Setup (Run in Snowflake Workspace)
 
 This is the only step that requires manual execution. Everything else is done through Cortex Code prompts. Open each file directly in the Workspace and run it:
@@ -107,9 +109,9 @@ This is the only step that requires manual execution. Everything else is done th
 3. Open `Setup/03_load_data.sql` and click **Run All**
 4. Verify the final query shows: DIM_STORE = 100, DIM_ITEM = 100, FACT_ITEM_SALES = 539,215
 
-### Step 2: Create Semantic View (Cortex Code)
+### Step 2: Create Semantic View (Run in Cortex Code Desktop)
 
-Open the file `Prompts/semantic_view.md` in Cortex Code and run the `/semantic-view` skill with the file attached:
+In the **Cortex Code Desktop** chat panel, type the following (the `@` attaches the file as context):
 
 ```
 /semantic-view @semantic_view.md
@@ -124,9 +126,9 @@ Open the file `Prompts/semantic_view.md` in Cortex Code and run the `/semantic-v
 
 **Expected result:** Semantic view `HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS` created with 3 tables, 2 relationships, and 8 verified queries.
 
-### Step 3: Create Cortex Agent (Cortex Code)
+### Step 3: Create Cortex Agent (Run in Cortex Code Desktop)
 
-Open the file `Prompts/agent.md` in Cortex Code and run the `/cortex-agent` skill with the file attached:
+In the **Cortex Code Desktop** chat panel, type:
 
 ```
 /cortex-agent @agent.md
@@ -142,9 +144,9 @@ Open the file `Prompts/agent.md` in Cortex Code and run the `/cortex-agent` skil
 
 **Expected result:** Agent `HOL_COCO_CWORK.AGENTS.HOT_FOOD_SALES_AGENT` created and ready to answer questions.
 
-### Step 4: Run Evaluations (Cortex Code)
+### Step 4: Run Evaluations (Run in Cortex Code Desktop)
 
-Open the file `Prompts/evaluations.md` in Cortex Code and paste the content as a prompt:
+In the **Cortex Code Desktop** chat panel, type:
 
 ```
 @evaluations.md
