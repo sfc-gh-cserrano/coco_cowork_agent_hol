@@ -2,7 +2,7 @@
 Create a Snowflake Cortex Agent that leverages the HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS semantic view to provide real-time sales analytics.
 
 ## Specifications
-
+- **Role**: Use role ACCOUNTADMIN
 - **Agent Name**: HOT_FOOD_SALES_AGENT
 - **Target Location**: HOL_COCO_CWORK.AGENTS
 - **Tool**: Semantic view `HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS` (cortex_analyst_text_to_sql)

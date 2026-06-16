@@ -2,7 +2,7 @@
 Create a Semantic View for sales analytics on the Facts and Dimensions at HOL_COCO_CWORK.DATA schema. 
 
 ## Specifications
-
+- **Role**: Use role ACCOUNTADMIN
 - **Semantic View Name**: hot_food_sales_analytics  
 - **Target Location**: HOL_COCO_CWORK.TOOLS  
 - **Source Tables**: All tables in HOL_COCO_CWORK.DATA (FACT_ITEM_SALES, DIM_ITEM, DIM_STORE)  
