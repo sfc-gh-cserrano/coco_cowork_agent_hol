@@ -167,8 +167,16 @@ JOIN DIM_ITEM i ON i.ITEM_NAME = stg.ITEM_NAME;
 DROP TABLE IF EXISTS STG_FACT_ITEM_SALES;
 
 --------------------------------------------------------------
--- 9. Verify Load
+-- 9. Create Skills Stage (for Agent Skills)
 --------------------------------------------------------------
+USE SCHEMA TOOLS;
+
+CREATE STAGE IF NOT EXISTS SKILLS_STAGE;
+
+--------------------------------------------------------------
+-- 10. Verify Load
+--------------------------------------------------------------
+USE SCHEMA DATA;
 SELECT 'DIM_STORE' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM DIM_STORE
 UNION ALL
 SELECT 'DIM_ITEM', COUNT(*) FROM DIM_ITEM

@@ -9,8 +9,9 @@ Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo
 
 1. **Star Schema Data Model** — Fact and dimension tables for convenience store hot food sales
 2. **Semantic View** — An AI-ready data layer with verified queries for Cortex Analyst
-3. **Cortex Agent** — A conversational analytics agent for C-Level executives
-4. **Evaluation Framework** — Ground truth dataset and automated agent evaluation
+3. **Cortex Agent** — A conversational analytics agent for C-Level executives with server-side skills
+4. **Agent Skills** — Anomaly detection and sales report generation skills
+5. **Evaluation Framework** — Ground truth dataset and automated agent evaluation
 
 ## Architecture
 
@@ -25,9 +26,12 @@ Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo
 │  FACT_ITEM    │  _ANALYTICS      │  _AGENT             │
 │  _SALES       │                  │                      │
 │               │  (8 VQRs,        │  (text-to-SQL tool,  │
-│  100 stores   │   2 relationships│   orchestration +    │
-│  100 items    │   3 tables)      │   response instrs)   │
-│  539K sales   │                  │                      │
+│  100 stores   │   2 relationships│   2 skills,          │
+│  100 items    │   3 tables)      │   orchestration +    │
+│  539K sales   │                  │   response instrs)   │
+│               │  Skills Stage:   │                      │
+│               │  anomaly_detect  │                      │
+│               │  sales_report    │                      │
 └───────────────┴──────────────────┴──────────────────────┘
 ```
 
@@ -46,14 +50,22 @@ This is the only step that requires manual SQL execution. Everything else is don
 1. Open a **Snowflake Workspace** (notebook)
 2. Create a **SQL cell** and paste the contents of `Setup/setup.sql`
 3. Run the SQL cell to create the warehouse, database, schemas, and tables
-4. Create a **Python cell** and run the following to upload the CSV files:
+4. Create a **Python cell** and run the following to upload the CSV files and skills:
 
 ```python
 from snowflake.snowpark.context import get_active_session
 session = get_active_session()
+
+# Upload data files
 session.file.put("data/dim_store.csv", "@HOL_STAGE/dim_store", auto_compress=True, overwrite=True)
 session.file.put("data/dim_item.csv", "@HOL_STAGE/dim_item", auto_compress=True, overwrite=True)
 session.file.put("data/fact_item_sales.csv", "@HOL_STAGE/fact_item_sales", auto_compress=True, overwrite=True)
+
+# Upload agent skills
+session.sql("USE SCHEMA TOOLS").collect()
+session.file.put("../Skills/anomaly_detection/SKILL.md", "@SKILLS_STAGE/skills/anomaly_detection/", auto_compress=False, overwrite=True)
+session.file.put("../Skills/sales_report/SKILL.md", "@SKILLS_STAGE/skills/sales_report/", auto_compress=False, overwrite=True)
+session.sql("USE SCHEMA DATA").collect()
 ```
 
 5. Run the remaining SQL statements (steps 7-9 in setup.sql) to load data into tables
@@ -129,6 +141,11 @@ coco_cowork_agent_hol/
 │   │   └── fact_item_sales.csv        ← 539K transactions
 │   ├── generate_data.py               ← Script that generated the CSVs
 │   └── upload_to_stage.py             ← Helper for uploading to stage
+├── Skills/
+│   ├── anomaly_detection/
+│   │   └── SKILL.md                   ← Anomaly detection skill
+│   └── sales_report/
+│       └── SKILL.md                   ← Sales report generator skill
 └── Prompts/
     ├── semantic_view.md               ← Step 2: Semantic view prompt
     ├── agent.md                       ← Step 3: Agent creation prompt

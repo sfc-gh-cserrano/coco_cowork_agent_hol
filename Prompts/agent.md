@@ -6,7 +6,9 @@ Create a Snowflake Cortex Agent that leverages the HOL_COCO_CWORK.TOOLS.HOT_FOOD
 - **Agent Name**: HOT_FOOD_SALES_AGENT
 - **Target Location**: HOL_COCO_CWORK.AGENTS
 - **Tool**: Semantic view `HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS` (cortex_analyst_text_to_sql)
-- **Chart Tool**: Enable data_to_chart for visualization generation
+- **Skills** (from stage `@HOL_COCO_CWORK.TOOLS.SKILLS_STAGE`):
+  - `anomaly_detection` at path `skills/anomaly_detection`
+  - `sales_report` at path `skills/sales_report`
 - **Targeted Users**: Data Analysts and C-Level executives who need evidence-based answers
 - **Tone**: Assertive and precise — no hedging language
 - **Behavior**: Ask follow-up questions to clarify ambiguous queries
