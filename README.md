@@ -37,7 +37,7 @@ Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo
 
 ## Prerequisites
 
-- Snowflake account with SYSADMIN and ACCOUNTADMIN access
+- Snowflake account with ACCOUNTADMIN access
 - Cortex Code (CoCo) desktop application installed
 - A Snowflake Workspace (notebook) for running the setup script
 
@@ -49,7 +49,7 @@ This is the only step that requires manual SQL execution. Everything else is don
 
 1. Open a **Snowflake Workspace** (notebook)
 2. Create a **SQL cell** and paste the contents of `Setup/setup.sql`
-3. Run the SQL cell to create the warehouse, database, schemas, and tables
+3. Run the SQL cell (executes as ACCOUNTADMIN) to create the warehouse, database, schemas, stages, and tables
 4. Create a **Python cell** and run the following to upload the CSV files and skills:
 
 ```python
