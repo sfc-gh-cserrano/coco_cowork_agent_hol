@@ -3,6 +3,8 @@
 
 Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo) — from raw data to a production-ready Cortex Agent with evaluations.
 
+>FOR A HTML VERSION OF THIS DOCUMENT -> [CLICK HERE](https://sfc-gh-cserrano.github.io/ml-enablement/coco_cowork_hol/)
+
 ## What You Will Build
 
 1. **Star Schema Data Model** — Fact and dimension tables for convenience store hot food sales
