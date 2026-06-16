@@ -88,25 +88,24 @@ If you prefer not to use Git, download the project and upload files directly.
 
 - Snowflake account with ACCOUNTADMIN access
 - Cortex Code (CoCo) desktop application installed
-- A Snowflake Workspace (notebook) for running the setup script
+- A Snowflake Workspace (see Getting Started above)
 
 ## Lab Steps
 
 ### Step 1: Setup (Run in Snowflake Workspace)
 
-This is the only step that requires manual execution. Everything else is done through Cortex Code prompts. Run these three files in order:
+This is the only step that requires manual execution. Everything else is done through Cortex Code prompts. Open each file directly in the Workspace and run it:
 
-| # | File | Cell Type | What it does |
-|---|------|-----------|--------------|
+| # | File | Type | What it does |
+|---|------|------|--------------|
 | 1 | `Setup/01_setup.sql` | SQL | Creates warehouse, database, schemas, stages, tables |
 | 2 | `Setup/02_copy_files.py` | Python | Uploads CSVs and skills to stages |
 | 3 | `Setup/03_load_data.sql` | SQL | Loads data into tables and verifies counts |
 
-1. Open a **Snowflake Workspace** (notebook)
-2. Create a **SQL cell**, paste `Setup/01_setup.sql`, and run it
-3. Create a **Python cell**, paste `Setup/02_copy_files.py`, and run it
-4. Create a **SQL cell**, paste `Setup/03_load_data.sql`, and run it
-5. Verify the final query shows: DIM_STORE = 100, DIM_ITEM = 100, FACT_ITEM_SALES = 539,215
+1. In the Workspace file browser, open `Setup/01_setup.sql` and click **Run All**
+2. Open `Setup/02_copy_files.py` and click **Run All**
+3. Open `Setup/03_load_data.sql` and click **Run All**
+4. Verify the final query shows: DIM_STORE = 100, DIM_ITEM = 100, FACT_ITEM_SALES = 539,215
 
 ### Step 2: Create Semantic View (Cortex Code)
 
