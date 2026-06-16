@@ -1,13 +1,15 @@
 # Run this in a Python cell in your Snowflake Workspace notebook
-# to upload the CSV files to the internal stage.
-# Ensure the data/ folder is uploaded to the Workspace alongside this notebook.
+# after 01_setup.sql has completed.
+# Uploads CSV data files and agent skills to their respective stages.
 
 from snowflake.snowpark.context import get_active_session
 
 session = get_active_session()
+session.sql("USE ROLE ACCOUNTADMIN").collect()
 session.sql("USE DATABASE HOL_COCO_CWORK").collect()
 session.sql("USE SCHEMA DATA").collect()
 
+# Upload data files
 files = [
     ("data/dim_store.csv", "@HOL_STAGE/dim_store"),
     ("data/dim_item.csv", "@HOL_STAGE/dim_item"),
@@ -20,7 +22,7 @@ for local_path, stage_path in files:
 
 print("Data files uploaded.\n")
 
-# Upload agent skills to SKILLS_STAGE in TOOLS schema
+# Upload agent skills
 session.sql("USE SCHEMA TOOLS").collect()
 
 skills = [

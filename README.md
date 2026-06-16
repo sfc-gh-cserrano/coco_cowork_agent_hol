@@ -35,6 +35,55 @@ Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo
 └───────────────┴──────────────────┴──────────────────────┘
 ```
 
+## Getting Started: Load the Project into a Workspace
+
+Before running the lab, you need the project files accessible in a Snowflake Workspace. Choose one of these two options:
+
+### Option A: Git Workspace (Recommended)
+
+Connect this public repository directly to a Snowflake Workspace — no SSH keys required.
+
+**1. Create a Git Integration (one-time, run as ACCOUNTADMIN):**
+
+```sql
+USE ROLE ACCOUNTADMIN;
+
+CREATE OR REPLACE API INTEGRATION HOL_GIT_INTEGRATION
+  API_PROVIDER = GIT_HTTPS_API
+  API_ALLOWED_PREFIXES = ('https://github.com/sfc-gh-cserrano/')
+  ENABLED = TRUE;
+```
+
+**2. Create a Git Repository:**
+
+```sql
+CREATE OR REPLACE GIT REPOSITORY HOL_COCO_CWORK.DATA.HOL_REPO
+  API_INTEGRATION = HOL_GIT_INTEGRATION
+  ORIGIN = 'https://github.com/sfc-gh-cserrano/coco_cowork_agent_hol.git';
+```
+
+**3. Create a Workspace from the Git Repository:**
+
+- Go to **Snowsight > Projects > Workspaces**
+- Click **+ Workspace** > **Create from Git Repository**
+- Select `HOL_COCO_CWORK.DATA.HOL_REPO` and branch `main`
+- The workspace opens with all files ready to use
+
+### Option B: Upload Files Manually
+
+If you prefer not to use Git, download the project and upload files directly.
+
+1. Download or clone this repository to your local machine
+2. Go to **Snowsight > Projects > Workspaces**
+3. Click **+ Workspace** to create a new blank workspace
+4. Use the **Upload** button (or drag and drop) to upload the following folder structure:
+   - `Setup/` (including `data/` subfolder with CSVs)
+   - `Skills/`
+   - `Prompts/`
+5. Verify all files appear in the workspace file browser
+
+---
+
 ## Prerequisites
 
 - Snowflake account with ACCOUNTADMIN access
@@ -45,31 +94,19 @@ Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo
 
 ### Step 1: Setup (Run in Snowflake Workspace)
 
-This is the only step that requires manual SQL execution. Everything else is done through Cortex Code prompts.
+This is the only step that requires manual execution. Everything else is done through Cortex Code prompts. Run these three files in order:
+
+| # | File | Cell Type | What it does |
+|---|------|-----------|--------------|
+| 1 | `Setup/01_setup.sql` | SQL | Creates warehouse, database, schemas, stages, tables |
+| 2 | `Setup/02_copy_files.py` | Python | Uploads CSVs and skills to stages |
+| 3 | `Setup/03_load_data.sql` | SQL | Loads data into tables and verifies counts |
 
 1. Open a **Snowflake Workspace** (notebook)
-2. Create a **SQL cell** and paste the contents of `Setup/setup.sql`
-3. Run the SQL cell (executes as ACCOUNTADMIN) to create the warehouse, database, schemas, stages, and tables
-4. Create a **Python cell** and run the following to upload the CSV files and skills:
-
-```python
-from snowflake.snowpark.context import get_active_session
-session = get_active_session()
-
-# Upload data files
-session.file.put("data/dim_store.csv", "@HOL_STAGE/dim_store", auto_compress=True, overwrite=True)
-session.file.put("data/dim_item.csv", "@HOL_STAGE/dim_item", auto_compress=True, overwrite=True)
-session.file.put("data/fact_item_sales.csv", "@HOL_STAGE/fact_item_sales", auto_compress=True, overwrite=True)
-
-# Upload agent skills
-session.sql("USE SCHEMA TOOLS").collect()
-session.file.put("../Skills/anomaly_detection/SKILL.md", "@SKILLS_STAGE/skills/anomaly_detection/", auto_compress=False, overwrite=True)
-session.file.put("../Skills/sales_report/SKILL.md", "@SKILLS_STAGE/skills/sales_report/", auto_compress=False, overwrite=True)
-session.sql("USE SCHEMA DATA").collect()
-```
-
-5. Run the remaining SQL statements (steps 7-9 in setup.sql) to load data into tables
-6. Verify the load shows: DIM_STORE = 100, DIM_ITEM = 100, FACT_ITEM_SALES = 539,215
+2. Create a **SQL cell**, paste `Setup/01_setup.sql`, and run it
+3. Create a **Python cell**, paste `Setup/02_copy_files.py`, and run it
+4. Create a **SQL cell**, paste `Setup/03_load_data.sql`, and run it
+5. Verify the final query shows: DIM_STORE = 100, DIM_ITEM = 100, FACT_ITEM_SALES = 539,215
 
 ### Step 2: Create Semantic View (Cortex Code)
 
@@ -134,13 +171,14 @@ Open the file `Prompts/evaluations.md` in Cortex Code and paste the content as a
 coco_cowork_agent_hol/
 ├── README.md                          ← You are here
 ├── Setup/
-│   ├── setup.sql                      ← Run this first (Step 1)
+│   ├── 01_setup.sql                   ← SQL: warehouse, DB, schemas, stages, tables
+│   ├── 02_copy_files.py               ← Python: upload CSVs and skills to stages
+│   ├── 03_load_data.sql               ← SQL: load data into tables
 │   ├── data/
 │   │   ├── dim_store.csv              ← 100 convenience stores
 │   │   ├── dim_item.csv               ← 100 hot food items
 │   │   └── fact_item_sales.csv        ← 539K transactions
-│   ├── generate_data.py               ← Script that generated the CSVs
-│   └── upload_to_stage.py             ← Helper for uploading to stage
+│   └── generate_data.py               ← Script that generated the CSVs
 ├── Skills/
 │   ├── anomaly_detection/
 │   │   └── SKILL.md                   ← Anomaly detection skill
