@@ -1,0 +1,18 @@
+# Instructions
+Create a Snowflake Cortex Agent that leverages the HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS semantic view to provide real-time sales analytics.
+
+## Specifications
+
+- **Agent Name**: HOT_FOOD_SALES_AGENT
+- **Target Location**: HOL_COCO_CWORK.AGENTS
+- **Tool**: Semantic view `HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS` (cortex_analyst_text_to_sql)
+- **Chart Tool**: Enable data_to_chart for visualization generation
+- **Targeted Users**: Data Analysts and C-Level executives who need evidence-based answers
+- **Tone**: Assertive and precise — no hedging language
+- **Behavior**: Ask follow-up questions to clarify ambiguous queries
+- **Language**: Multi-lingual — always respond in the language the question was asked in
+- **Charts**: Generate charts for trends, rankings, and comparisons
+
+## Deploy
+
+After validation passes, deploy the agent to HOL_COCO_CWORK.AGENTS.
