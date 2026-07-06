@@ -1,23 +1,28 @@
-# Hands-On Lab: Building AI Agents with Cortex Code and CoWork
+author: Carlos Serrano
+id: building-ai-agents-with-cortex-code-and-cowork
+language: en
+summary: Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo) — from raw data to a production-ready Cortex Agent with evaluations.
+categories: snowflake-site:taxonomy/solution-center/certification/quickstart, snowflake-site:taxonomy/product/ai-ml
+environments: web
+status: Published
+feedback link: https://github.com/Snowflake-Labs/sfguides/issues
+fork repo link: https://github.com/Snowflake-Labs/sfquickstarts/tree/master/site/sfguides/src/building-ai-agents-with-cortex-code-and-cowork
+authors: Carlos Serrano
 
+# Building AI Agents with Cortex Code and CoWork
 
-Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo) — from raw data to a production-ready Cortex Agent with evaluations.
+<!-- ------------------------ -->
+## Overview
 
->FOR A HTML VERSION OF THIS DOCUMENT -> [CLICK HERE](https://sfc-gh-cserrano.github.io/ml-enablement/coco_cowork_hol/)
+This guide walks you through building a complete AI-powered analytics agent using **Snowflake Cortex Code (CoCo)** — the AI-native IDE for Snowflake. You will go from raw data to a production-ready Cortex Agent with evaluations, all driven by natural language prompts.
 
-## What You Will Build
+The lab uses a convenience store hot food sales dataset (100 stores, 100 items, 539K transactions) and demonstrates how Cortex Code automates the creation of semantic views, agents, skills, and evaluation frameworks.
 
-1. **Star Schema Data Model** — Fact and dimension tables for convenience store hot food sales
-2. **Semantic View** — An AI-ready data layer with verified queries for Cortex Analyst
-3. **Cortex Agent** — A conversational analytics agent for C-Level executives with server-side skills
-4. **Agent Skills** — Anomaly detection and sales report generation skills
-5. **Evaluation Framework** — Ground truth dataset and automated agent evaluation
-
-## Architecture
+![Architecture](assets/architecture.png)
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  HOL_COCO_CWORK Database                 │
+│                  HOL_COCO_COWORK Database                 │
 ├───────────────┬──────────────────┬──────────────────────┤
 │  DATA Schema  │  TOOLS Schema    │  AGENTS Schema       │
 │               │                  │                      │
@@ -35,208 +40,293 @@ Build an end-to-end AI-powered analytics agent using Snowflake Cortex Code (CoCo
 └───────────────┴──────────────────┴──────────────────────┘
 ```
 
-## Getting Started: Load the Project into a Workspace
+### Prerequisites
 
-Before running the lab, you need the project files accessible in a Snowflake Workspace. Choose one of these two options:
+- A [Snowflake account](https://signup.snowflake.com/?utm_source=snowflake-devrel&utm_medium=developer-guides&utm_cta=developer-guides) with ACCOUNTADMIN access
+- [Cortex Code](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code) desktop application installed and connected to your Snowflake account
+- Access to a Snowflake Workspace
 
-### Option A: Git Workspace (Recommended)
+### What You Will Learn
 
-Connect this public repository directly to a Snowflake Workspace — no SSH keys required.
+- How to use Cortex Code to build Snowflake objects from natural language prompts
+- How to create semantic views with verified queries for Cortex Analyst
+- How to build a Cortex Agent with orchestration instructions and server-side skills
+- How to evaluate agent performance using Snowflake's built-in evaluation framework
 
-**1. Create a Git Integration (one-time, run as ACCOUNTADMIN):**
+### What You Will Build
+
+- A star-schema data model for convenience store hot food sales
+- A semantic view with 8 verified queries (VQRs)
+- A Cortex Agent with anomaly detection and sales report skills
+- An evaluation framework measuring answer correctness and logical consistency
+
+<!-- ------------------------ -->
+## Setup Environment
+
+This step creates all the infrastructure needed for the lab. You will run SQL and Python scripts in a Snowflake Workspace.
+
+### Step 1: Load Project Files into a Workspace
+
+Clone or download the [companion repository](https://github.com/Snowflake-Labs/sfquickstarts/tree/master/site/sfguides/src/building-ai-agents-with-cortex-code-and-cowork/assets) and load it into a Snowflake Workspace.
+
+**Option A: Git Workspace (Recommended)**
+
+Run the following SQL in a worksheet to create a Git integration and repository:
 
 ```sql
 USE ROLE ACCOUNTADMIN;
 
+CREATE DATABASE IF NOT EXISTS HOL_COCO_COWORK;
+CREATE SCHEMA IF NOT EXISTS HOL_COCO_COWORK.REPOS;
+
 CREATE OR REPLACE API INTEGRATION HOL_GIT_INTEGRATION
   API_PROVIDER = GIT_HTTPS_API
-  API_ALLOWED_PREFIXES = ('https://github.com/sfc-gh-cserrano/')
+  API_ALLOWED_PREFIXES = ('https://github.com/Snowflake-Labs/')
   ENABLED = TRUE;
+
+CREATE OR REPLACE GIT REPOSITORY HOL_COCO_COWORK.REPOS.HOL_REPO
+  API_INTEGRATION = HOL_GIT_INTEGRATION
+  ORIGIN = 'https://github.com/Snowflake-Labs/sfguide-building-ai-agents-with-cortex-code-and-cowork.git';
 ```
 
-**2. Create a Git Repository:**
+Then in **Snowsight > Projects > Workspaces**, click **+ Workspace** > **Create from Git Repository**, select `HOL_COCO_COWORK.REPOS.HOL_REPO` and branch `main`.
+
+**Option B: Upload Files Manually**
+
+1. Download the repository to your local machine
+2. Create a new blank workspace in **Snowsight > Projects > Workspaces**
+3. Upload the `Setup/`, `Skills/`, and `Prompts/` folders
+
+### Step 2: Create Infrastructure (SQL)
+
+Open `Setup/01_setup.sql` in the Workspace and click **Run All**. This creates:
 
 ```sql
-CREATE OR REPLACE GIT REPOSITORY HOL_COCO_CWORK.DATA.HOL_REPO
-  API_INTEGRATION = HOL_GIT_INTEGRATION
-  ORIGIN = 'https://github.com/sfc-gh-cserrano/coco_cowork_agent_hol.git';
+-- Warehouse and compute pool
+CREATE WAREHOUSE IF NOT EXISTS HOL_WH
+  WAREHOUSE_SIZE = 'XSMALL'
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE;
+
+CREATE COMPUTE POOL IF NOT EXISTS HOL_COMPUTE_POOL
+  MIN_NODES = 1
+  MAX_NODES = 1
+  INSTANCE_FAMILY = CPU_X64_XS
+  AUTO_RESUME = TRUE
+  AUTO_SUSPEND_SECS = 300;
+
+-- Database and schemas
+CREATE DATABASE IF NOT EXISTS HOL_COCO_COWORK;
+CREATE SCHEMA IF NOT EXISTS DATA;
+CREATE SCHEMA IF NOT EXISTS TOOLS;
+CREATE SCHEMA IF NOT EXISTS AGENTS;
+
+-- Tables: DIM_STORE, DIM_ITEM, FACT_ITEM_SALES
+-- File format, stages, and foreign key constraints
 ```
 
-**3. Create a Workspace from the Git Repository:**
+### Step 3: Upload Files to Stages (Python)
 
-- Go to **Snowsight > Projects > Workspaces**
-- Click **+ Workspace** > **Create from Git Repository**
-- Select `HOL_COCO_CWORK.DATA.HOL_REPO` and branch `main`
-- The workspace opens with all files ready to use
+Open `Setup/02_copy_files.py` in the Workspace and click **Run All**. This uploads:
+- CSV data files to `@HOL_STAGE`
+- Agent skill files to `@SKILLS_STAGE`
 
-### Option B: Upload Files Manually
+### Step 4: Load Data (SQL)
 
-If you prefer not to use Git, download the project and upload files directly.
+Open `Setup/03_load_data.sql` in the Workspace and click **Run All**. This loads data into all three tables.
 
-1. Download or clone this repository to your local machine
-2. Go to **Snowsight > Projects > Workspaces**
-3. Click **+ Workspace** to create a new blank workspace
-4. Use the **Upload** button (or drag and drop) to upload the following folder structure:
-   - `Setup/` (including `data/` subfolder with CSVs)
-   - `Skills/`
-   - `Prompts/`
-5. Verify all files appear in the workspace file browser
+Verify the final query output shows:
 
----
+| TABLE_NAME | ROW_COUNT |
+|---|---|
+| DIM_STORE | 100 |
+| DIM_ITEM | 100 |
+| FACT_ITEM_SALES | 539,215 |
 
-## Prerequisites
+> NOTE: If row counts don't match, re-run the scripts in order. The fact table uses a staging table with JOINs to resolve UUID foreign keys.
 
-- Snowflake account with ACCOUNTADMIN access
-- Cortex Code (CoCo) desktop application installed
-- A Snowflake Workspace (see Getting Started above)
+<!-- ------------------------ -->
+## Create Semantic View
 
-## Lab Steps
+> From this point forward, all steps are performed in **Cortex Code Desktop (CoCo)**. Open the project folder in CoCo and use the chat panel.
 
-> **Steps 2, 3, and 4 are run entirely in Cortex Code Desktop (CoCo).** Open the project folder in CoCo, then use the prompts below in the chat panel. Only Step 1 runs in a Snowflake Workspace.
+A semantic view is an AI-ready data layer that maps business concepts to your tables. It enables Cortex Analyst to generate accurate SQL from natural language questions.
 
-### Step 1: Setup (Run in Snowflake Workspace)
+### Run the Prompt
 
-This is the only step that requires manual execution. Everything else is done through Cortex Code prompts. Open each file directly in the Workspace and run it:
-
-| # | File | Type | What it does |
-|---|------|------|--------------|
-| 1 | `Setup/01_setup.sql` | SQL | Creates warehouse, database, schemas, stages, tables |
-| 2 | `Setup/02_copy_files.py` | Python | Uploads CSVs and skills to stages |
-| 3 | `Setup/03_load_data.sql` | SQL | Loads data into tables and verifies counts |
-
-1. In the Workspace file browser, open `Setup/01_setup.sql` and click **Run All**
-2. Open `Setup/02_copy_files.py` and click **Run All**
-3. Open `Setup/03_load_data.sql` and click **Run All**
-4. Verify the final query shows: DIM_STORE = 100, DIM_ITEM = 100, FACT_ITEM_SALES = 539,215
-
-### Step 2: Create Semantic View (Run in Cortex Code Desktop)
-
-In the **Cortex Code Desktop** chat panel, type the following (the `@` attaches the file as context):
+In the Cortex Code chat panel, type:
 
 ```
 /semantic-view @semantic_view.md
 ```
 
-**What CoCo will do:**
-- Discover all tables in HOL_COCO_CWORK.DATA
-- Generate a semantic model with dimensions, facts, and relationships
-- Create 8 verified queries (VQRs) for common sales analytics questions
-- Validate the YAML against Snowflake
-- Deploy the semantic view to HOL_COCO_CWORK.TOOLS
+The `@` symbol attaches the file `Prompts/semantic_view.md` as context for the command.
 
-**Expected result:** Semantic view `HOL_COCO_CWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS` created with 3 tables, 2 relationships, and 8 verified queries.
+### What CoCo Does
 
-### Step 3: Create Cortex Agent (Run in Cortex Code Desktop)
+Cortex Code will automatically:
+1. Discover all tables in `HOL_COCO_COWORK.DATA`
+2. Generate a semantic model with dimensions, facts, and relationships
+3. Create 8 verified queries (VQRs) covering common sales analytics questions
+4. Validate the YAML against Snowflake
+5. Deploy the semantic view to `HOL_COCO_COWORK.TOOLS`
 
-In the **Cortex Code Desktop** chat panel, type:
+### Verified Queries Included
+
+The semantic view includes verified queries for:
+1. Total revenue
+2. Total revenue by category
+3. Total revenue by state
+4. Top 10 stores by revenue
+5. Top 10 best-selling items by quantity
+6. Monthly revenue trend
+7. Average discount percentage by category
+8. Total transaction count
+
+### Expected Result
+
+Semantic view `HOL_COCO_COWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS` is created with:
+- 3 tables (FACT_ITEM_SALES, DIM_STORE, DIM_ITEM)
+- 2 relationships (fact to each dimension)
+- 8 verified queries
+
+![Semantic View](assets/semantic_view_created.png)
+
+<!-- ------------------------ -->
+## Create Cortex Agent
+
+A Cortex Agent is an intelligent entity that reasons over your data using tools (text-to-SQL, search, skills) and responds to user questions conversationally.
+
+### Run the Prompt
+
+In the Cortex Code chat panel, type:
 
 ```
 /cortex-agent @agent.md
 ```
 
-**What CoCo will do:**
-- Create a workspace directory for the agent
-- Build the agent specification with:
-  - Orchestration instructions (role, context, tool selection, boundaries, business rules)
-  - Response instructions (assertive tone, chart generation, multilingual)
-  - Tool configuration pointing to the semantic view
-- Deploy the agent to HOL_COCO_CWORK.AGENTS
+### What CoCo Does
 
-**Expected result:** Agent `HOL_COCO_CWORK.AGENTS.HOT_FOOD_SALES_AGENT` created and ready to answer questions.
+Cortex Code will:
+1. Create a workspace directory for the agent configuration
+2. Build the agent specification with:
+   - **Orchestration instructions** — role context, tool selection logic, boundaries, and business rules
+   - **Response instructions** — assertive tone, chart generation, multilingual support
+   - **Tool configuration** — pointing to `HOL_COCO_COWORK.TOOLS.HOT_FOOD_SALES_ANALYTICS`
+   - **Skills** — anomaly detection and sales report generation from `@SKILLS_STAGE`
+3. Validate and deploy the agent to `HOL_COCO_COWORK.AGENTS`
 
-### Step 4: Run Evaluations (Run in Cortex Code Desktop)
+### Agent Skills
 
-In the **Cortex Code Desktop** chat panel, type:
+The agent is equipped with two server-side skills:
+
+**Anomaly Detection** — Performs z-score analysis over a 7-day rolling window to find unusual spikes or drops in revenue, quantity, or transactions. Supports grouping by store, category, state, or item.
+
+**Sales Report Generator** — Produces structured executive reports with summary metrics, top products, monthly trends, missed opportunities, and recommended actions for a specific store or state.
+
+### Expected Result
+
+Agent `HOL_COCO_COWORK.AGENTS.HOT_FOOD_SALES_AGENT` is created and ready to answer questions.
+
+![Agent Created](assets/agent_created.png)
+
+<!-- ------------------------ -->
+## Run Evaluations
+
+Evaluations measure how well your agent answers questions against ground truth data. This step creates a test dataset and runs automated scoring.
+
+### Run the Prompt
+
+In the Cortex Code chat panel, type:
 
 ```
 @evaluations.md
 ```
 
-**What CoCo will do:**
-- Query the underlying tables to build ground truth answers
-- Create an evaluation dataset with 10 questions across 5 categories:
-  - Basic metrics (total revenue, transaction count, avg value)
-  - Dimensional analysis (by state, by category, by discount)
-  - Trend analysis (monthly revenue)
-  - Rankings (top store, top item)
-  - Filter analysis (spicy items)
-- Register the dataset with Snowflake's evaluation framework
-- Run the evaluation measuring `answer_correctness` and `logical_consistency`
-- Present results with per-question scores
+### What CoCo Does
 
-**Expected result:** Evaluation scores of ~93% answer correctness and 100% logical consistency.
+Cortex Code will:
+1. Query the underlying tables to compute ground truth answers
+2. Create an evaluation dataset with 10 questions across 5 categories:
+   - **Basic metrics** — total revenue, transaction count, average transaction value
+   - **Dimensional analysis** — revenue by state, by category, by discount
+   - **Trend analysis** — monthly revenue patterns
+   - **Rankings** — top store, top item
+   - **Filter analysis** — spicy items performance
+3. Register the dataset using `SYSTEM$CREATE_EVALUATION_DATASET`
+4. Run the evaluation measuring:
+   - `answer_correctness` — factual accuracy of the agent's responses
+   - `logical_consistency` — coherence and reasoning quality
+5. Present results with per-question scores
 
-## Project Structure
+### Expected Result
 
-```
-coco_cowork_agent_hol/
-├── README.md                          ← You are here
-├── Setup/
-│   ├── 01_setup.sql                   ← SQL: warehouse, DB, schemas, stages, tables
-│   ├── 02_copy_files.py               ← Python: upload CSVs and skills to stages
-│   ├── 03_load_data.sql               ← SQL: load data into tables
-│   ├── data/
-│   │   ├── dim_store.csv              ← 100 convenience stores
-│   │   ├── dim_item.csv               ← 100 hot food items
-│   │   └── fact_item_sales.csv        ← 539K transactions
-│   └── generate_data.py               ← Script that generated the CSVs
-├── Skills/
-│   ├── anomaly_detection/
-│   │   └── SKILL.md                   ← Anomaly detection skill
-│   └── sales_report/
-│       └── SKILL.md                   ← Sales report generator skill
-└── Prompts/
-    ├── semantic_view.md               ← Step 2: Semantic view prompt
-    ├── agent.md                       ← Step 3: Agent creation prompt
-    └── evaluations.md                 ← Step 4: Evaluation prompt
-```
+Evaluation scores of approximately:
+- **Answer Correctness**: ~93%
+- **Logical Consistency**: 100%
 
-Cortex Code will auto-generate workspace directories (e.g., `semantic_view_*/`, `HOL_COCO_CWORK_AGENTS_*/`) as it works through each step.
+![Evaluation Results](assets/evaluation_results.png)
 
-## Data Model
+<!-- ------------------------ -->
+## Test the Agent in CoWork
 
-### DIM_STORE (100 rows)
-| Column | Type | Description |
-|--------|------|-------------|
-| STORE_ID | VARCHAR(36) | UUID primary key |
-| STORE_NAME | VARCHAR(100) | Store identifier (e.g., QuickStop #060) |
-| ADDRESS | VARCHAR(200) | Street address |
-| CITY | VARCHAR(100) | City |
-| STATE | VARCHAR(2) | US state code (18 East Coast states) |
-| ZIP_CODE | VARCHAR(10) | ZIP code |
-| LATITUDE | FLOAT | Geo coordinate |
-| LONGITUDE | FLOAT | Geo coordinate |
-| OPENED_DATE | DATE | Store opening date |
+Now that the agent is deployed, you can interact with it through Snowflake CoWork.
 
-### DIM_ITEM (100 rows)
-| Column | Type | Description |
-|--------|------|-------------|
-| ITEM_ID | VARCHAR(36) | UUID primary key |
-| ITEM_NAME | VARCHAR(200) | Item name |
-| CATEGORY | VARCHAR(100) | Food category (19 categories) |
-| UNIT_PRICE | NUMBER(10,2) | Standard price |
-| COST_PRICE | NUMBER(10,2) | Cost to store |
-| CALORIES | INTEGER | Calorie count |
-| IS_SPICY | BOOLEAN | Spicy flag |
+### Access CoWork
 
-### FACT_ITEM_SALES (539,215 rows)
-| Column | Type | Description |
-|--------|------|-------------|
-| SALE_ID | VARCHAR(36) | UUID primary key |
-| STORE_ID | VARCHAR(36) | FK → DIM_STORE |
-| ITEM_ID | VARCHAR(36) | FK → DIM_ITEM |
-| SALE_DATE | DATE | Transaction date (Jan-Mar 2025) |
-| QUANTITY_SOLD | INTEGER | Units sold |
-| UNIT_PRICE | NUMBER(10,2) | Price at time of sale |
-| DISCOUNT_PCT | INTEGER | Discount applied (0-15%) |
-| TOTAL_SALES | NUMBER(12,2) | Revenue after discount |
+Open <a href="https://app.snowflake.com/_deeplink/#/ai" class="_deeplink">Snowflake CoWork</a> and ensure:
+- Your role is set to **ACCOUNTADMIN**
+- Your warehouse is set to **HOL_WH**
+- Your agent is set to **HOT_FOOD_SALES_AGENT**
 
-## Cleanup
+### Sample Questions
 
-To remove all objects created by this lab:
+Try these questions to test the agent's capabilities:
 
-```sql
-DROP DATABASE IF EXISTS HOL_COCO_CWORK;
-DROP WAREHOUSE IF EXISTS HOL_WH;
-DROP COMPUTE POOL IF EXISTS HOL_COMPUTE_POOL;
-```
+#### Basic Analytics
+- *What is the total revenue for Q1 2025?*
+- *How many transactions happened in March?*
+
+#### Dimensional Analysis
+- *Which state generates the most revenue?*
+- *What are the top 5 categories by sales volume?*
+
+#### Trend Analysis
+- *Show me the monthly revenue trend with a chart.*
+- *How did February compare to January?*
+
+#### Anomaly Detection (Skill)
+- *Are there any unusual revenue patterns by category?*
+- *Detect anomalies in transactions by store.*
+
+#### Sales Reports (Skill)
+- *Generate a sales report for QuickStop #001.*
+- *Give me an executive summary for the state of NY.*
+
+![CoWork Chat](assets/cowork_chat.png)
+
+<!-- ------------------------ -->
+## Conclusion And Resources
+
+Congratulations! You have built a complete AI-powered analytics agent using Cortex Code — from raw data to a production-ready Cortex Agent with automated evaluations.
+
+### What You Learned
+
+- How to set up a star-schema data model in Snowflake for analytics
+- How to use Cortex Code's `/semantic-view` command to auto-generate semantic views with verified queries
+- How to use Cortex Code's `/cortex-agent` command to build agents with orchestration instructions, tools, and skills
+- How to create ground truth evaluation datasets and run automated agent evaluations
+- How to interact with your agent through Snowflake CoWork
+
+### Key Takeaway
+
+Steps 2-4 were entirely driven by **single natural language prompts** in Cortex Code. The AI-assisted development workflow lets you build production Snowflake objects from high-level instructions — no manual YAML authoring, no SQL debugging, no configuration files.
+
+### Related Resources
+
+- [Companion Repository](https://github.com/Snowflake-Labs/sfguide-building-ai-agents-with-cortex-code-and-cowork)
+- [Cortex Code Documentation](https://docs.snowflake.com/en/user-guide/cortex-code/cortex-code)
+- [Semantic Views Documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst/semantic-views)
+- [Cortex Agents Documentation](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)
+- [Snowflake CoWork Documentation](https://docs.snowflake.com/user-guide/snowflake-cortex/snowflake-intelligence)
+- [Best Practices for Building Cortex Agents](https://www.snowflake.com/en/developers/guides/best-practices-to-building-cortex-agents/)
