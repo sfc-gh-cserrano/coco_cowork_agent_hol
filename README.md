@@ -67,7 +67,7 @@ This step creates all the infrastructure needed for the lab. You will run SQL an
 
 ### Required Files
 
-Download the [Setup folder](assets/Setup) which contains all scripts and data needed:
+Download the [Setup folder](assets/Setup.zip) which contains all scripts and data needed and extract them:
 
 | File | Type | Purpose |
 |------|------|---------|
@@ -78,15 +78,7 @@ Download the [Setup folder](assets/Setup) which contains all scripts and data ne
 | [data/dim_item.csv](assets/Setup/data/dim_item.csv) | CSV | 100 hot food items |
 | [data/fact_item_sales.csv](assets/Setup/data/fact_item_sales.csv) | CSV | 539K sales transactions |
 
-You will also need the following prompt and skill files for Steps 3-5:
-
-| File | Purpose |
-|------|---------|
-| [Prompts/semantic_view.md](assets/Prompts/semantic_view.md) | Cortex Code prompt for creating the semantic view |
-| [Prompts/agent.md](assets/Prompts/agent.md) | Cortex Code prompt for creating the agent |
-| [Prompts/evaluations.md](assets/Prompts/evaluations.md) | Cortex Code prompt for running evaluations |
-| [Skills/anomaly_detection/SKILL.md](assets/Skills/anomaly_detection/SKILL.md) | Anomaly detection skill definition |
-| [Skills/sales_report/SKILL.md](assets/Skills/sales_report/SKILL.md) | Sales report generator skill definition |
+Download the [Skills](assets/Skills.zip) and [Prompts](assets/Prompts.zip) folder and extract them:
 
 ### Step 1: Load Project Files into a Workspace
 
@@ -95,7 +87,7 @@ You will also need the following prompt and skill files for Steps 3-5:
 3. Use the **Upload** button (or drag and drop) to upload the following folder structure:
    - `Setup/` — including the `data/` subfolder with all three CSV files
    - `Skills/` — both skill subfolders with their SKILL.md files
-   - `Prompts/` — all three prompt files
+   - `Prompts/` — all three prompt files (Optional)
 4. Verify all files appear in the workspace file browser before proceeding
 
 ### Step 2: Create Infrastructure (SQL)
